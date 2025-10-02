@@ -1,0 +1,44 @@
+services:
+  backend:
+    image: biazo360-back
+    container_name: biazo360-back
+    restart: unless-stopped
+    environment:
+      - SF_LOGIN_URL=https://login.salesforce.com
+      - SF_USERNAME=SeuUsername
+      - SF_PASSWORD=SuaSenha
+      - SF_TOKEN=SeuToken
+      - PORT=3001
+      - ENCOMENDA_CHANNEL=/event/EventoEncomenda__e
+      - HISTORICO_CHANNEL=/event/EventoHistoricoEncomenda__e
+      - DATABASE_URL=mysql://usuario:senha@endereco:porta/banco
+    networks:
+      - traefik
+
+  frontend:
+    image: biazo360-front
+    container_name: biazo360-front
+    restart: unless-stopped
+    
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.biazo360.rule=Host(`biazo360.zvcore.com`)"
+      - "traefik.http.routers.biazo360.tls.certresolver=leresolver"
+      - "traefik.http.services.biazo360.loadbalancer.server.port=3000" # 3000 é a porta padrão
+      - "traefik.http.routers.biazo360.entrypoints=websecure"
+      - "traefik.http.routers.biazo360.service=biazo360"
+      - "traefik.docker.network=traefik"
+
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:3001
+
+    networks:
+      - traefik
+
+    depends_on:
+      - backend
+
+networks:
+  traefik:
+      external: true
+
